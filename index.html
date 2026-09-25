@@ -1,7 +1,693 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Coming soon</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE_TYPEWRITER_ARCHIVE // VOL. III</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* EDITORIAL PALETTE */
+            --bg-color: #F2F0EC;         
+            --card-bg: #FCFBF9;          
+            --text-main: #1A1A1A;        
+            --text-muted: #595959;
+            --accent: #2C3E50; 
+            --highlight: #C25B56; 
+            --border: 1px solid #D6D3CD; 
+            --shadow: 0px 10px 40px -15px rgba(0, 0, 0, 0.05);
+            
+            --font-display: 'Montserrat', sans-serif;
+            --font-body: 'Cormorant Garamond', serif;
+            --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            overflow: hidden; /* Main window never scrolls, internal elements do */
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--bg-color);
+            border-bottom: var(--border);
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .brand-group { display: flex; flex-direction: column; }
+
+        h1 {
+            margin: 0;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            font-size: 1.8rem;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .meta-tag {
+            font-size: 0.7rem;
+            font-family: var(--font-display);
+            color: var(--highlight);
+            margin-top: 5px;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            padding-top: 5px;
+        }
+
+        .nav-trigger {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            padding: 0;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .nav-trigger:hover { color: var(--highlight); }
+
+        /* --- MODAL SYSTEM --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(242, 240, 236, 0.98);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s var(--ease-smooth);
+            padding-top: 100px;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+        .modal-close {
+            position: absolute;
+            top: 40px; right: 40px;
+            background: none; border: none;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--text-main);
+            letter-spacing: 1px;
+        }
+        .modal-close:hover { color: var(--highlight); }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-main);
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: 3rem;
+            width: 60%;
+            text-align: center;
+            color: var(--text-main);
+            outline: none;
+            margin-bottom: 60px;
+        }
+
+        .results-container {
+            width: 60%;
+            max-width: 900px;
+            max-height: 60vh;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .results-container::-webkit-scrollbar { display: none; }
+
+        .result-item {
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0; 
+            animation: slideUp 0.5s forwards;
+            transition: transform 0.2s ease;
+        }
+        .result-item:hover { transform: translateX(10px); }
+        .result-item:hover .title { color: var(--highlight); }
+        .result-item .title { font-family: var(--font-body); font-size: 2rem; font-weight: 300; }
+        .result-item .meta { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- TABS --- */
+        nav.category-tabs {
+            display: flex;
+            background: var(--bg-color);
+            padding: 30px 0 15px 0;
+            gap: 50px;
+            border-bottom: var(--border);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .tab-btn:hover, .tab-btn.active { color: var(--text-main); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 100%; height: 2px; background-color: var(--highlight); }
+
+        /* --- MARQUEE --- */
+        .marquee-container {
+            border-bottom: var(--border);
+            background: var(--text-main);
+            color: var(--bg-color);
+            overflow: hidden;
+            white-space: nowrap;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .marquee-track { display: inline-block; animation: scroll 60s linear infinite; padding-left: 100%; }
+        .marquee-link { display: inline-block; font-family: var(--font-display); font-size: 0.8rem; margin-right: 80px; text-transform: uppercase; cursor: pointer; letter-spacing: 0.1em; opacity: 0.8; }
+        .marquee-link:hover { opacity: 1; color: var(--highlight); }
+        .marquee-link::after { content: '+'; margin-left: 80px; color: var(--highlight); }
+
+        /* --- MAIN VIEWPORT ARCHITECTURE --- */
+        .viewport {
+            flex-grow: 1;
+            background: var(--card-bg);
+            position: relative;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+            border: var(--border);
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* 
+           DESKTOP LAYOUT (Default)
+           - article-container: Flex row
+           - meta-col: Fixed width, independent scroll (optional)
+           - content-col: Flex grow, independent scroll
+        */
+        .article-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            display: flex; /* Default flex row */
+        }
+        .article-container.active { opacity: 1; }
+
+        .meta-col {
+            width: 350px;
+            flex-shrink: 0;
+            border-right: var(--border);
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #FAFAF8;
+            overflow-y: auto; /* Scrollable if meta is long */
+        }
+
+        .content-col {
+            flex-grow: 1;
+            padding: 60px 100px;
+            overflow-y: auto; /* Independent scroll for content */
+            scroll-behavior: smooth;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        .meta-header h2 {
+            font-family: var(--font-body);
+            font-size: 2.8rem;
+            line-height: 1.1;
+            margin: 0 0 30px 0;
+            font-weight: 400;
+        }
+
+        .meta-list {
+            list-style: none; padding: 0; margin: 0;
+            font-family: var(--font-display); font-size: 0.75rem;
+            color: var(--text-muted); letter-spacing: 0.05em; line-height: 2.5;
+        }
+        .meta-list li strong { color: var(--text-main); font-weight: 600; display: inline-block; width: 80px; }
+
+        .abstract {
+            margin-top: 40px;
+            font-family: var(--font-body); font-style: italic;
+            font-size: 1.1rem; line-height: 1.6; color: var(--text-muted);
+            border-top: 1px solid #E5E5E5; padding-top: 20px;
+        }
+
+        .read-link {
+            display: inline-block; font-family: var(--font-display);
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;
+            color: var(--text-main); text-decoration: none;
+            border-bottom: 1px solid var(--highlight); padding-bottom: 5px; margin-top: 40px;
+        }
+
+        .prose { max-width: 700px; margin: 0 auto; font-size: 1.3rem; line-height: 1.8; color: #222; }
+        .prose p { margin-bottom: 2rem; }
+        .prose h3 {
+            font-family: var(--font-display); font-size: 1.1rem;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            margin-top: 3rem; margin-bottom: 1.5rem; color: var(--accent);
+        }
+        .prose blockquote {
+            border-left: 2px solid var(--highlight); margin: 2rem 0;
+            padding-left: 25px; font-style: italic; color: var(--text-muted);
+        }
+
+        .empty-state {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            font-family: var(--font-body); font-size: 2rem; color: #CCC; font-style: italic;
+        }
+
+        /* --- MOBILE OPTIMIZATION (The Fix) --- */
+        @media (max-width: 900px) {
+            body { padding: 15px; }
+
+            /* 
+               MOBILE LAYOUT CHANGE:
+               - article-container becomes a single scrollable column.
+               - meta-col and content-col lose their independent scrollbars.
+               - meta-col sits at the top, content-col below.
+               - Scrolling moves meta-col up and out of view.
+            */
+            .article-container {
+                display: block; /* Stack elements naturally */
+                flex-direction: column;
+                overflow-y: auto; /* THE MAIN SCROLLBAR */
+                height: 100%;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .article-container.active { display: block; } /* Override flex display */
+
+            .meta-col {
+                width: 100%;
+                height: auto; /* Natural height */
+                min-height: auto;
+                overflow: visible; /* No internal scroll */
+                border-right: none;
+                border-bottom: 1px dashed var(--border);
+                padding: 40px 20px;
+                background: #FAFAF8;
+            }
+
+            .content-col {
+                width: 100%;
+                height: auto; /* Natural height */
+                overflow: visible; /* No internal scroll */
+                padding: 30px 20px 80px 20px; /* Extra bottom padding for scroll space */
+                flex-grow: 0; 
+            }
+
+            /* Visual Tweaks for Mobile */
+            .meta-header h2 { font-size: 2rem; margin-bottom: 20px; }
+            .abstract { font-size: 1rem; margin-top: 20px; }
+            .prose { font-size: 1.15rem; }
+            .search-input { width: 90%; font-size: 1.8rem; }
+            .results-container { width: 95%; }
+            .controls { gap: 20px; }
+            
+            /* Hide empty state on mobile if a recipe is loaded to prevent overlap issues */
+            #empty-view { display: flex; text-align: center; padding: 20px; font-size: 1.5rem; }
+        }
+
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+    </style>
+</head>
 <body>
-<h1>This page does not have an index.html set up yet!</h1>
+
+    <header>
+        <div class="brand-group">
+            <h1>The Typewriter Archive</h1>
+            <div class="meta-tag">CURATED THOUGHTS // VOL. III</div>
+        </div>
+        <div class="controls">
+            <button class="nav-trigger" onclick="openSearch()">Search</button>
+            <button class="nav-trigger" onclick="openFullIndex()">Index</button>
+        </div>
+    </header>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-modal" class="modal-overlay">
+        <button class="modal-close" onclick="closeAllModals()">[ CLOSE ]</button>
+        <input type="text" id="search-input" class="search-input" placeholder="Search keywords..." onkeyup="handleSearch(this.value)">
+        <div id="search-results" class="results-container"></div>
+    </div>
+
+    <!-- INDEX MODAL -->
+    <div id="index-modal" class="modal-overlay">
+        <button class="modal-close" onclick="closeAllModals()">[ CLOSE ]</button>
+        <h2 style="font-family: var(--font-display); margin-bottom: 40px; font-weight: 400; letter-spacing: 0.1em;">MASTER INDEX</h2>
+        <div id="index-results" class="results-container"></div>
+    </div>
+
+    <nav class="category-tabs">
+        <button class="tab-btn active" onclick="switchCategory('essays', this)">Essays</button>
+        <button class="tab-btn" onclick="switchCategory('fiction', this)">Flash Fiction</button>
+        <button class="tab-btn" onclick="switchCategory('notes', this)">Field Notes</button>
+    </nav>
+
+    <div class="marquee-container">
+        <div class="marquee-track" id="marquee-track"></div>
+    </div>
+
+    <main class="viewport">
+        <div id="empty-view" class="empty-state">
+            <span>Select an entry to begin reading...</span>
+        </div>
+
+        <article id="article-view" class="article-container">
+            <!-- Left (Top on Mobile): Metadata -->
+            <div class="meta-col">
+                <div class="meta-header">
+                    <h2 id="a-title">Title</h2>
+                    <ul class="meta-list">
+                        <li><strong>PUBLISHED</strong> <span id="a-date">...</span></li>
+                        <li><strong>READ TIME</strong> <span id="a-time">...</span></li>
+                        <li><strong>TAGS</strong> <span id="a-tags">...</span></li>
+                    </ul>
+                    <div class="abstract" id="a-abstract"></div>
+                </div>
+                <div class="action-area">
+                    <a href="#" target="_blank" id="a-link" class="read-link">Open Source →</a>
+                </div>
+            </div>
+
+            <!-- Right (Bottom on Mobile): Content -->
+            <div class="content-col">
+                <div id="a-body" class="prose"></div>
+            </div>
+        </article>
+    </main>
+
+    <script>
+        // --- DATA LAYER ---
+        const BLOG_DATA = {
+            essays: [
+                { 
+                    id: 'e1', 
+                    title: "The Death of Nuance", 
+                    date: "OCT 12, 2024", 
+                    time: "4 MIN", 
+                    tags: "CULTURE / TECH", 
+                    link: "#",
+                    abstract: "Exploring how algorithmic feeds have compressed our ability to tolerate ambiguity.",
+                    body: `
+                        <h3>The Binary Trap</h3>
+                        <p>In the architecture of modern discourse, there is no room for the grey. The algorithms that govern our attention span are binary by design: engage or ignore, love or hate, upvote or downvote. This structural limitation has bled into our cognitive processes.</p>
+                        <p>We are forgetting how to hold two opposing thoughts in our heads simultaneously. The capability—once the hallmark of a refined intellect—is now treated as a bug in the system. To be unsure is to be weak. To be ambiguous is to be invisible.</p>
+                        <blockquote>"Certainty is the enemy of growth, yet it is the only currency the machine accepts."</blockquote>
+                        <h3>Reclaiming Ambiguity</h3>
+                        <p>Resistance, then, looks like hesitation. It looks like the pause before the reply. It looks like the refusal to take a side until the evidence is overwhelming. We must rebuild the digital spaces to allow for the 'maybe', the 'sometimes', and the 'it's complicated'.</p>
+                        <p>If we fail to do this, we risk flattening the human experience into a database of booleans, where every complex emotion is rounded down to its nearest marketable data point.</p>
+                    `
+                },
+                { 
+                    id: 'e2', 
+                    title: "Digital Minimalism", 
+                    date: "NOV 05, 2024", 
+                    time: "6 MIN", 
+                    tags: "LIFESTYLE / DESIGN", 
+                    link: "#",
+                    abstract: "Why less interface leads to more cognitive freedom, and the rise of 'invisible' UX.",
+                    body: `
+                        <h3>The Noise Floor</h3>
+                        <p>Every pixel on a screen competes for a fraction of your neural processing power. When we clutter interfaces with decorative elements, we are essentially raising the noise floor of our digital environment. The result is a subtle, persistent cognitive fatigue.</p>
+                        <p>True minimalism is not about white space; it is about intent. It is the ruthless elimination of anything that does not serve the user's primary goal. It is an act of respect for the user's time.</p>
+                        <h3>The Invisible Interface</h3>
+                        <p>The future of design is invisible. It is anticipatory. It is a system that understands context so well that it presents the solution before the user has fully formulated the problem.</p>
+                        <p>When the interface disappears, we are left only with the task. This is the ultimate goal of the architect: to build a room so perfect that you forget it has walls.</p>
+                    `
+                },
+                { 
+                    id: 'e3', 
+                    title: "Slow Thinking", 
+                    date: "DEC 20, 2024", 
+                    time: "5 MIN", 
+                    tags: "PHILOSOPHY", 
+                    link: "#",
+                    abstract: "A defense of deliberation in an age that demands instant reaction.",
+                    body: `
+                        <h3>The Speed Trap</h3>
+                        <p>Speed is often confused with efficiency, but in the realm of thought, they are often inversely related. The first thought is rarely the best thought; it is merely the most available one.</p>
+                        <p>Our tools encourage rapid-fire responses. The 'typing...' indicator is a pressure cooker. The read receipt is a subpoena. We are designing anxiety into the very fabric of our communication protocols.</p>
+                        <h3>The Case for Latency</h3>
+                        <p>I propose we introduce artificial latency. A delay. A buffer. A space where wisdom can accumulate before the send button is pressed. Let us value the slow thinker, the one who sleeps on the problem, the one who returns with an answer that has been weighed and measured.</p>
+                    `
+                }
+            ],
+            fiction: [
+                { 
+                    id: 'f1', 
+                    title: "The Last Analog Watch", 
+                    date: "JAN 15, 2025", 
+                    time: "8 MIN", 
+                    tags: "SCI-FI / NOSTALGIA", 
+                    link: "#",
+                    abstract: "A story about a man trying to repair a mechanical device in a fully digital world.",
+                    body: `
+                        <h3>The Ticking</h3>
+                        <p>It was the sound that bothered them. The rhythmic, mechanical *tick-tick-tick* that seemed so alien in the silent, hum-less apartment. Elias sat at the workbench, his magnifying loupe pressed into his eye socket, staring at the escapement mechanism.</p>
+                        <p>"Why don't you just emulate it?" his daughter asked, hovering via projection in the corner of the room. "The audio synthesis is perfect now. You wouldn't know the difference."</p>
+                        <p>"I would know," Elias muttered, tweaking the hairspring with a pair of tweezers older than the building they lived in. "The difference isn't in the sound. It's in the friction. It's in the wear."</p>
+                        <h3>Obsolescence</h3>
+                        <p>He finally got the balance wheel oscillating. The watch sprang to life, a heartbeat of brass and steel. It was inaccurate. It would lose three seconds a day. It required kinetic energy to function. It was, by all metrics of their time, a terrible device.</p>
+                        <p>But as Elias strapped it to his wrist, feeling the cold metal warm against his skin, he felt anchored. In a world of cloud synchronization and absolute atomic precision, he was the only one carrying his own time.</p>
+                    `
+                },
+                { 
+                    id: 'f2', 
+                    title: "Midnight at the Diner", 
+                    date: "FEB 02, 2025", 
+                    time: "3 MIN", 
+                    tags: "SLICE OF LIFE", 
+                    link: "#",
+                    abstract: "Coffee, neon lights, and the conversations that happen when the city sleeps.",
+                    body: `
+                        <h3>3:00 AM</h3>
+                        <p>The neon sign outside buzzed with a dying 'E'. Inside, the coffee was burnt, and the laminate table was sticky. It was perfect. The only other patron was a man in a trench coat reading a newspaper from 1998.</p>
+                        <p>The waitress poured without asking. She had a face that had seen every version of heartbreak this city could invent. "The usual?" she asked, though she had never seen me before.</p>
+                        <p>"The usual," I agreed. We were all regulars here, in the universal diner of the sleepless.</p>
+                    `
+                }
+            ],
+            notes: [
+                { 
+                    id: 'n1', 
+                    title: "Color Theory in UI", 
+                    date: "MAR 10, 2025", 
+                    time: "2 MIN", 
+                    tags: "DESIGN NOTE", 
+                    link: "#",
+                    abstract: "Observations on why warmer palettes are replacing cool blues in SaaS products.",
+                    body: `
+                        <h3>The Shift to Warmth</h3>
+                        <p>For a decade, 'Trust Blue' dominated the web. Facebook, Twitter, LinkedIn. Blue was safe. Blue was corporate.</p>
+                        <p>Now, we see a shift to 'creams', 'oatmeals', and 'terracottas'. Why? Because software is no longer a utility; it is a habitat. We spend our lives in these windows. We want them to feel like a living room, not a hospital.</p>
+                    `
+                },
+                { 
+                    id: 'n2', 
+                    title: "Typography as Voice", 
+                    date: "APR 05, 2025", 
+                    time: "2 MIN", 
+                    tags: "TYPOGRAPHY", 
+                    link: "#",
+                    abstract: "Serifs are back. The clean grotesque sans-serif era is ending.",
+                    body: `
+                        <h3>Return of the Serif</h3>
+                        <p>The geometric sans-serif said "We are modern, we are neutral." But neutrality is boring. Brands want personality again. A sharp serif like *Editorial New* or a soft one like *Reco* carries a voice. It speaks.</p>
+                        <p>Choosing a font is casting the narrator of your story.</p>
+                    `
+                }
+            ]
+        };
+
+        // FLATTEN DATA FOR SEARCH
+        const FLAT_DB = [
+            ...BLOG_DATA.essays.map(i => ({...i, category: 'Essays'})),
+            ...BLOG_DATA.fiction.map(i => ({...i, category: 'Fiction'})),
+            ...BLOG_DATA.notes.map(i => ({...i, category: 'Field Notes'}))
+        ];
+
+        // --- DOM REFERENCES ---
+        const track = document.getElementById('marquee-track');
+        const emptyView = document.getElementById('empty-view');
+        const articleView = document.getElementById('article-view');
+        
+        // VIEWPORT ELEMENTS
+        const aTitle = document.getElementById('a-title');
+        const aDate = document.getElementById('a-date');
+        const aTime = document.getElementById('a-time');
+        const aTags = document.getElementById('a-tags');
+        const aAbstract = document.getElementById('a-abstract');
+        const aBody = document.getElementById('a-body');
+        const aLink = document.getElementById('a-link');
+
+        // --- INITIALIZATION ---
+        window.onload = () => switchCategory('essays', document.querySelector('.tab-btn'));
+
+        // --- MODAL LOGIC ---
+        function openSearch() {
+            closeAllModals();
+            document.getElementById('search-modal').classList.add('open');
+            setTimeout(() => document.getElementById('search-input').focus(), 100);
+        }
+
+        function openFullIndex() {
+            closeAllModals();
+            const container = document.getElementById('index-results');
+            container.innerHTML = '';
+            
+            FLAT_DB.forEach((item, index) => {
+                const el = createResultElement(item, index);
+                container.appendChild(el);
+            });
+
+            document.getElementById('index-modal').classList.add('open');
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
+        }
+
+        function handleSearch(query) {
+            const container = document.getElementById('search-results');
+            container.innerHTML = '';
+            
+            if(query.length < 2) return;
+
+            const matches = FLAT_DB.filter(i => 
+                i.title.toLowerCase().includes(query.toLowerCase()) || 
+                i.tags.toLowerCase().includes(query.toLowerCase()) ||
+                i.abstract.toLowerCase().includes(query.toLowerCase())
+            );
+
+            matches.forEach((item, index) => {
+                const el = createResultElement(item, index);
+                container.appendChild(el);
+            });
+        }
+
+        function createResultElement(item, index) {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.style.animationDelay = `${index * 0.05}s`;
+            
+            div.innerHTML = `
+                <span class="title">${item.title}</span>
+                <span class="meta">${item.category} // ${item.date}</span>
+            `;
+            
+            div.onclick = () => {
+                loadArticle(item);
+                closeAllModals();
+            };
+            return div;
+        }
+
+        // --- CATEGORY & MARQUEE LOGIC ---
+        function switchCategory(category, btnElement) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            track.innerHTML = '';
+            const items = BLOG_DATA[category];
+            const displayItems = [...items, ...items, ...items, ...items]; 
+
+            displayItems.forEach(item => {
+                const link = document.createElement('a');
+                link.className = 'marquee-link';
+                link.innerText = item.title;
+                link.onclick = () => loadArticle(item);
+                track.appendChild(link);
+            });
+        }
+
+        // --- ARTICLE LOADING LOGIC ---
+        function loadArticle(item) {
+            // Hide current view
+            articleView.classList.remove('active');
+            emptyView.style.display = 'none';
+
+            setTimeout(() => {
+                // Populate data
+                aTitle.innerText = item.title;
+                aDate.innerText = item.date;
+                aTime.innerText = item.time;
+                aTags.innerText = item.tags;
+                aAbstract.innerText = item.abstract;
+                aBody.innerHTML = item.body;
+                aLink.href = item.link;
+
+                // Reset scroll positions
+                if (window.innerWidth <= 900) {
+                     // On mobile, scroll the whole container to top
+                    articleView.scrollTop = 0;
+                } else {
+                    // On desktop, scroll just the content column
+                    document.querySelector('.content-col').scrollTop = 0;
+                }
+
+                // Reveal
+                // Force display flex/block based on media query is handled by CSS, 
+                // but class 'active' controls opacity.
+                articleView.classList.add('active');
+            }, 300);
+        }
+
+        // Interaction Listeners
+        track.addEventListener('mouseenter', () => track.style.animationPlayState = 'paused');
+        track.addEventListener('mouseleave', () => track.style.animationPlayState = 'running');
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAllModals();
+        });
+
+    </script>
 </body>
 </html>
